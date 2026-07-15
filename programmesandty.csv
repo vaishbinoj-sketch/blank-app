@@ -1,0 +1,80 @@
+issue_name,category
+Garbage Overflow,Environment
+Waste Management,Environment
+Plastic Pollution,Environment
+Water Pollution,Environment
+Air Pollution,Environment
+Noise Pollution,Environment
+Tree Cutting,Environment
+Tree Plantation,Environment
+Lack of Green Spaces,Environment
+Clean Water Shortage,Environment
+Rainwater Harvesting,Environment
+
+Potholes,Infrastructure
+Damaged Roads,Infrastructure
+Broken Footpaths,Infrastructure
+Streetlight Not Working,Infrastructure
+Traffic Signal Problems,Infrastructure
+Poor Public Transport,Infrastructure
+Drainage Problems,Infrastructure
+Water Leakage,Infrastructure
+Broken Public Facilities,Infrastructure
+Construction Issues,Infrastructure
+
+Unclean Public Toilets,Health & Sanitation
+Poor Sanitation,Health & Sanitation
+Mosquito Breeding,Health & Sanitation
+Disease Outbreak Awareness,Health & Sanitation
+Health Camp Organization,Health & Sanitation
+Food Safety Issues,Health & Sanitation
+Medical Facility Shortage,Health & Sanitation
+Cleanliness Drive,Health & Sanitation
+
+Traffic Accidents,Safety & Security
+Road Safety Awareness,Safety & Security
+Women Safety Issues,Safety & Security
+Child Safety Issues,Safety & Security
+Crime Prevention,Safety & Security
+Fire Safety Awareness,Safety & Security
+Emergency Response,Safety & Security
+Street Harassment,Safety & Security
+
+School Facility Issues,Education & Awareness
+Digital Literacy,Education & Awareness
+Free Education Support,Education & Awareness
+Career Guidance,Education & Awareness
+Awareness Campaigns,Education & Awareness
+Community Workshops,Education & Awareness
+Library Development,Education & Awareness
+
+Food Donation,Social Welfare
+Clothes Donation,Social Welfare
+Help for Elderly,Social Welfare
+Support for Homeless People,Social Welfare
+Blood Donation Camp,Social Welfare
+Fundraising Activities,Social Welfare
+Community Support Programs,Social Welfare
+
+Stray Animal Problems,Animal Welfare
+Animal Rescue,Animal Welfare
+Pet Adoption Drive,Animal Welfare
+Animal Feeding Campaign,Animal Welfare
+Animal Vaccination Camp,Animal Welfare
+
+Flood Issues,Disaster Management
+Fire Accident Support,Disaster Management
+Earthquake Awareness,Disaster Management
+Emergency Relief Campaign,Disaster Management
+Disaster Preparedness,Disaster Management
+
+Cyber Safety Awareness,Technology
+Internet Access Issues,Technology
+Digital Service Problems,Technology
+Online Fraud Awareness,Technology
+
+Cultural Events,Community Activities
+Sports Activities,Community Activities
+Neighbourhood Events,Community Activities
+Volunteer Programs,Community Activities
+Youth Engagement,Community Activities
