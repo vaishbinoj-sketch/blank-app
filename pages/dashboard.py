@@ -571,122 +571,64 @@ elif selected == "Achievements":
         )
 #----------Gallery-----------
 elif selected=="Gallery":
-
-    gallery_option=st.selectbox(
-        "Choose an Option",
-        ["View VoxLocal Gallery","Publish your Gallery"]
-    )
+    gallery_option=st.selectbox("Choose an Option",["View VoxLocal Gallery","Publish your Gallery"])
 
     def format_name(name):
         return str(name).strip().lower().replace(" ","_")
 
     if gallery_option=="View VoxLocal Gallery":
-
         st.header("🖼️ VoxLocal Gallery")
 
-        # Check whether gallery folder exists
         if not os.path.exists("gallery"):
-            st.error("❌ Gallery folder not found in the repository.")
+            st.error("❌ Gallery folder not found.")
             st.stop()
 
-        # Get categories from folders
-        categories=[
-            folder for folder in os.listdir("gallery")
-            if os.path.isdir(os.path.join("gallery",folder))
-        ]
+        categories=[folder for folder in os.listdir("gallery") if os.path.isdir(os.path.join("gallery",folder))]
 
         if not categories:
             st.info("📷 No gallery categories available.")
             st.stop()
 
-        selected_category=st.selectbox(
-            "Select Category",
-            sorted(categories)
-        )
+        selected_category=st.selectbox("Select Category",sorted(categories))
 
-        category_path=os.path.join(
-            "gallery",
-            selected_category
-        )
+        category_path=os.path.join("gallery",selected_category)
 
-        # Get issues from category folders
-        issues=[
-            folder for folder in os.listdir(category_path)
-            if os.path.isdir(os.path.join(category_path,folder))
-        ]
+        issues=[folder for folder in os.listdir(category_path) if os.path.isdir(os.path.join(category_path,folder))]
 
         if not issues:
-            st.info("📷 No issues available in this category.")
+            st.info("📷 No issues available for this category.")
             st.stop()
 
-        selected_issue=st.selectbox(
-            "Select Issue",
-            sorted(issues)
-        )
+        selected_issue=st.selectbox("Select Issue",sorted(issues))
 
         st.subheader(f"📌 {selected_issue}")
         st.caption(f"Category: {selected_category}")
 
-        issue_path=os.path.join(
-            category_path,
-            selected_issue
-        )
+        issue_path=os.path.join(category_path,selected_issue)
 
-        # Get images
-        images=[
-            image for image in os.listdir(issue_path)
-            if image.lower().endswith(
-                (".jpg",".jpeg",".png",".webp")
-            )
-        ]
+        images=[image for image in os.listdir(issue_path) if image.lower().endswith((".jpg",".jpeg",".png",".webp"))]
 
         if not images:
             st.info("📷 No pictures available for this issue.")
             st.stop()
 
-        # Sort images
         images.sort()
 
-        st.success(
-            f"📸 {len(images)} picture(s) in this gallery"
-        )
-
-        # Display 3 pictures in each row
         cols=st.columns(3)
 
         for i,image in enumerate(images):
-
             with cols[i%3]:
+                image_path=os.path.join(issue_path,image)
+                st.image(image_path,use_container_width=True)
 
-                image_path=os.path.join(
-                    issue_path,
-                    image
-                )
+                filename=os.path.splitext(image)[0]
 
-                # Show picture
-                st.image(
-                    image_path,
-                    use_container_width=True
-                )
-
-                # Get uploader name from filename
-                # Example:
-                # vaishu.jpg
-                # vaishu_park.jpg
-                # rahul_cleaning.png
-
-                filename_without_extension=os.path.splitext(
-                    image
-                )[0]
-
-                if "_" in filename_without_extension:
-                    uploader=filename_without_extension.split("_")[0]
+                if "_" in filename:
+                    uploader=filename.split("_")[0]
                 else:
-                    uploader=filename_without_extension
+                    uploader=filename
 
-                st.caption(
-                    f"👤 Uploaded by: {uploader}"
-                )
+                st.caption(f"👤 Uploaded by: {uploader}")
 # # ---------- ABOUT ----------
 # Add this once at the top of your app
 elif selected == "About Voxlocal":
