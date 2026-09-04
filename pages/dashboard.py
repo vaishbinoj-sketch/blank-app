@@ -384,55 +384,130 @@ elif selected == "Announcements":
 # ---------- PROFILE ----------
 elif selected == "My Profile":
     st.header("👤 My Profile")
+
     if "logged_in" in st.session_state and st.session_state["logged_in"]:
+
         username = st.session_state["username"]
+
         users = pd.read_csv("users.csv")
-        user_index = users[users["username"] == username].index[0]
-        user_data = users.loc[user_index]
-    # Layout (side-by-side)
-        col1, col2 = st.columns(2)
 
-        with col1:
-            st.text_input("Name", user_data["Name"], disabled=True)
-            st.text_input("Email", user_data["Mail ID"], disabled=True)
-            st.text_input("Date of Birth", user_data["dateofbirth"], disabled=True)
+        # Find logged-in user
+        user_rows = users[users["username"] == username]
 
-        with col2:
-            st.text_input("Username", user_data["username"], disabled=True)
-            st.text_input("Date of Join", user_data["dateofjoin"], disabled=True)
-    # ---- EDIT SECTION ----
-    st.subheader("✏️ Edit Profile")
-    new_name = st.text_input("Edit Name", user_data["Name"])
-    new_email = st.text_input("Edit Email", user_data["Mail ID"])
-    change_password = st.checkbox("Change Password 🔒")
+        if not user_rows.empty:
+            user_index = user_rows.index[0]
+            user_data = users.loc[user_index]
 
-    if change_password:
-        new_password = st.text_input("New Password", type="password")
-        confirm_password = st.text_input("Confirm Password", type="password")
-        # Save button
-    if st.button("💾 Save Changes"):
-        users.at[user_index, "Name"] = new_name
-        users.at[user_index, "Mail ID"] = new_email
-        if change_password:
-           if not new_password:
-            st.error("Please enter a new password ❌")
-            st.stop()
+            # ---------------- PROFILE DISPLAY ----------------
+            col1, col2 = st.columns(2)
 
-           if not confirm_password:
-            st.error("Please confirm your new password ❌")
-            st.stop()
+            with col1:
+                st.text_input(
+                    "Name",
+                    value=user_data["Name"],
+                    disabled=True
+                )
 
-           if new_password != confirm_password:
-            st.error("Passwords do not match ❌")
-            st.stop()
-    users.at[user_index, "Name"] = new_name
-    users.at[user_index, "Mail ID"] = new_email
+                st.text_input(
+                    "Email",
+                    value=user_data["Mail ID"],
+                    disabled=True
+                )
 
-    if change_password:
-        users.at[user_index, "password"] = new_password
-    users.to_csv("users.csv", index=False)
-    st.success("Profile updated successfully ✅")
-    st.rerun()
+                st.text_input(
+                    "Date of Birth",
+                    value=user_data["dateofbirth"],
+                    disabled=True
+                )
+
+            with col2:
+                st.text_input(
+                    "Username",
+                    value=user_data["username"],
+                    disabled=True
+                )
+
+                st.text_input(
+                    "Date of Join",
+                    value=user_data["dateofjoin"],
+                    disabled=True
+                )
+
+            # ---------------- EDIT SECTION ----------------
+            st.subheader("✏️ Edit Profile")
+
+            new_name = st.text_input(
+                "Edit Name",
+                value=user_data["Name"]
+            )
+
+            new_email = st.text_input(
+                "Edit Email",
+                value=user_data["Mail ID"]
+            )
+
+            change_password = st.checkbox("Change Password 🔒")
+
+            new_password = ""
+            confirm_password = ""
+
+            if change_password:
+                new_password = st.text_input(
+                    "New Password",
+                    type="password"
+                )
+
+                confirm_password = st.text_input(
+                    "Confirm Password",
+                    type="password"
+                )
+
+            # ---------------- SAVE BUTTON ----------------
+            if st.button("💾 Save Changes"):
+
+                # Name validation
+                if not new_name.strip():
+                    st.error("Please enter your name ❌")
+                    st.stop()
+
+                # Email validation
+                if not new_email.strip():
+                    st.error("Please enter your email ❌")
+                    st.stop()
+
+                # Password validation
+                if change_password:
+
+                    if not new_password:
+                        st.error("Please enter a new password ❌")
+                        st.stop()
+
+                    if not confirm_password:
+                        st.error("Please confirm your new password ❌")
+                        st.stop()
+
+                    if new_password != confirm_password:
+                        st.error("Passwords do not match ❌")
+                        st.stop()
+
+                    users.at[user_index, "password"] = new_password
+
+                # Update profile details
+                users.at[user_index, "Name"] = new_name
+                users.at[user_index, "Mail ID"] = new_email
+
+                # Save to CSV
+                users.to_csv("users.csv", index=False)
+
+                st.success("Profile updated successfully ✅")
+
+                st.rerun()
+
+        else:
+            st.error("User profile not found ❌")
+
+    else:
+        st.warning("Please login to view your profile.")
 #------Acheivements----------
 elif selected == "Achievements":
 
