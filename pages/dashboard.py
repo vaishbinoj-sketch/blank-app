@@ -384,134 +384,63 @@ elif selected == "Announcements":
 # ---------- PROFILE ----------
 elif selected == "My Profile":
     st.header("👤 My Profile")
-
     if st.session_state.get("logged_in", False):
-
         username = st.session_state["username"]
-
-        # ALWAYS reload the latest CSV
         users = pd.read_csv("users.csv")
-
-        # Find current user again
-        user_rows = users[users["username"] == username]
-
+        user_rows = users[users["username"].astype(str) == str(username)]
         if not user_rows.empty:
-
             user_index = user_rows.index[0]
             user_data = users.loc[user_index]
-
-            # Show latest information
+            if st.session_state.get("profile_updated", False):
+                st.success("Profile updated successfully ✅")
+                st.session_state["profile_updated"] = False
+            st.subheader("👤 Profile Information")
             col1, col2 = st.columns(2)
-
             with col1:
-                st.text_input(
-                    "Name",
-                    value=str(user_data["Name"]),
-                    disabled=True
-                )
-
-                st.text_input(
-                    "Email",
-                    value=str(user_data["Mail ID"]),
-                    disabled=True
-                )
-
-                st.text_input(
-                    "Date of Birth",
-                    value=str(user_data["dateofbirth"]),
-                    disabled=True
-                )
-
+                st.text_input("Name", value=str(user_data["Name"]), disabled=True, key="display_name")
+                st.text_input("Email", value=str(user_data["Mail ID"]), disabled=True, key="display_email")
+                st.text_input("Date of Birth", value=str(user_data["dateofbirth"]), disabled=True, key="display_dob")
             with col2:
-                st.text_input(
-                    "Username",
-                    value=str(user_data["username"]),
-                    disabled=True
-                )
-
-                st.text_input(
-                    "Date of Join",
-                    value=str(user_data["dateofjoin"]),
-                    disabled=True
-                )
-
+                st.text_input("Username", value=str(user_data["username"]), disabled=True, key="display_username")
+                st.text_input("Date of Join", value=str(user_data["dateofjoin"]), disabled=True, key="display_join")
+            st.divider()
             st.subheader("✏️ Edit Profile")
-
-            new_name = st.text_input(
-                "Edit Name",
-                value=str(user_data["Name"]),
-                key="edit_name"
-            )
-
-            new_email = st.text_input(
-                "Edit Email",
-                value=str(user_data["Mail ID"]),
-                key="edit_email"
-            )
-
-            change_password = st.checkbox(
-                "Change Password 🔒"
-            )
-
+            new_name = st.text_input("Edit Name", value=str(user_data["Name"]), key="edit_name")
+            new_email = st.text_input("Edit Email", value=str(user_data["Mail ID"]), key="edit_email")
+            change_password = st.checkbox("Change Password 🔒", key="change_password")
             new_password = ""
             confirm_password = ""
-
             if change_password:
-
-                new_password = st.text_input(
-                    "New Password",
-                    type="password"
-                )
-
-                confirm_password = st.text_input(
-                    "Confirm Password",
-                    type="password"
-                )
-
-            if st.button("💾 Save Changes"):
-
-                # Validate name
+                new_password = st.text_input("New Password", type="password", key="new_password")
+                confirm_password = st.text_input("Confirm Password", type="password", key="confirm_password")
+            if st.button("💾 Save Changes", key="save_changes"):
                 if not new_name.strip():
                     st.error("Please enter your name ❌")
                     st.stop()
-
-                # Validate email
                 if not new_email.strip():
                     st.error("Please enter your email ❌")
                     st.stop()
-
-                # Password validation
                 if change_password:
-
                     if not new_password:
                         st.error("Please enter a new password ❌")
                         st.stop()
-
                     if not confirm_password:
                         st.error("Please confirm your new password ❌")
                         st.stop()
-
                     if new_password != confirm_password:
                         st.error("Passwords do not match ❌")
                         st.stop()
-
-                    users.at[user_index, "password"] = new_password
-
-                # Update name and email
                 users.at[user_index, "Name"] = new_name.strip()
                 users.at[user_index, "Mail ID"] = new_email.strip()
-
-                # Save latest information
+                if change_password:
+                    users.at[user_index, "password"] = new_password
                 users.to_csv("users.csv", index=False)
-
-                st.success("Profile updated successfully ✅")
-
-                # Reload application
+                st.session_state["Name"] = new_name.strip()
+                st.session_state["Mail ID"] = new_email.strip()
+                st.session_state["profile_updated"] = True
                 st.rerun()
-
         else:
             st.error("User profile not found ❌")
-
     else:
         st.warning("Please login to view your profile.")
 #------Acheivements----------
