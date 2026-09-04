@@ -382,6 +382,7 @@ elif selected == "Announcements":
                     st.session_state["joined"] = True
                     st.rerun()
 # ---------- PROFILE ----------
+import os
 elif selected == "My Profile":
     st.header("👤 My Profile")
     if st.session_state.get("logged_in", False):
