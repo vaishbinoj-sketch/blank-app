@@ -414,14 +414,25 @@ elif selected == "My Profile":
         users.at[user_index, "Name"] = new_name
         users.at[user_index, "Mail ID"] = new_email
         if change_password:
-            if new_password == confirm_password:
-                users.at[user_index, "password"] = new_password
-            else:
-                st.error("Passwords do not match ❌")
-                st.stop()
-        users.to_csv("users.csv", index=False)
-        st.success("Profile updated successfully ✅")
-        st.rerun()
+           if not new_password:
+            st.error("Please enter a new password ❌")
+            st.stop()
+
+           if not confirm_password:
+            st.error("Please confirm your new password ❌")
+            st.stop()
+
+           if new_password != confirm_password:
+            st.error("Passwords do not match ❌")
+            st.stop()
+    users.at[user_index, "Name"] = new_name
+    users.at[user_index, "Mail ID"] = new_email
+
+    if change_password:
+        users.at[user_index, "password"] = new_password
+    users.to_csv("users.csv", index=False)
+    st.success("Profile updated successfully ✅")
+    st.rerun()
 #------Acheivements----------
 elif selected == "Achievements":
 
