@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as pl
 from streamlit_option_menu import option_menu
 st.set_page_config(page_title="Dashboard", layout="wide")
 
@@ -90,18 +89,6 @@ if selected == "Home":
         col2.metric("Resolved", resolved)
         col3.metric("In Progress", progress)
         col4.metric("Pending", pending)
-
-        # Pie Chart
-        st.subheader("📌 Issue Distribution")
-        issue_counts = df["Issue"].value_counts()
-
-        fig, ax = pl.subplots(figsize=(4,4))
-        fig.patch.set_facecolor("#DBD4D4")
-        ax.pie(issue_counts, labels=issue_counts.index, autopct='%1.1f%%', radius=0.7)
-        ax.axis("equal")
-
-        st.pyplot(fig)
-
         # Bar Chart
         st.subheader("📈 Status Distribution")
         status_counts = df["Status"].value_counts()
