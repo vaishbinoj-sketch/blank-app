@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as pl
 from streamlit_option_menu import option_menu
+st.set_page_config(page_title="Dashboard", layout="wide")
+
 st.markdown("""
 <style>
 [data-testid="stSidebarNav"] {
@@ -9,9 +11,6 @@ st.markdown("""
 }
 </style>
 """, unsafe_allow_html=True)
-
-# ---------- PAGE CONFIG (ONLY ONCE, AT TOP) ----------
-st.set_page_config(page_title="Dashboard", layout="wide")
 
 # ---------- BACKGROUND ----------
 def set_gif_bg():
