@@ -459,58 +459,133 @@ elif selected=="Achievements":
         st.write("🎉 You have unlocked most achievements!")
 
 elif selected=="Gallery":
-    gallery_option=st.selectbox("Choose an Option",["View VoxLocal Gallery","Publish your Gallery"])
-    if gallery_option=="View VoxLocal Gallery":
+
+    gallery_option=st.selectbox("Choose an Option",["View Voxlocal Gallery","Publish your Gallery"])
+
+    def format_name(name):
+        return str(name).strip().lower().replace(" ","_")
+
+    if gallery_option=="View Voxlocal Gallery":
+
         st.header("🖼️ VoxLocal Gallery")
-        gallery_path="gallery"
-        if not os.path.exists(gallery_path):
-            st.error("❌ The gallery folder was not found in your repository.")
-            st.info("Make sure you have a folder named 'gallery' in the same repository as dashboard.py.")
+
+        try:
+            programme_df=pd.read_csv("programmesandty.csv")
+        except FileNotFoundError:
+            st.error("❌ programmesandty.csv not found")
             st.stop()
-        categories=[
-            folder for folder in os.listdir(gallery_path)
-            if os.path.isdir(os.path.join(gallery_path,folder))
-        ]
-        if not categories:
-            st.info("📷 No gallery categories available.")
-            st.stop()
-        selected_category=st.selectbox("Select Category",sorted(categories))
-        category_path=os.path.join(gallery_path,selected_category)
-        issues=[
-            folder for folder in os.listdir(category_path)
-            if os.path.isdir(os.path.join(category_path,folder))
-        ]
-        if not issues:
-            st.info("📷 No issues available for this category.")
-            st.stop()
-        selected_issue=st.selectbox("Select Issue",sorted(issues))
+
+        category_list=programme_df["category"].unique()
+
+        selected_category=st.selectbox("Select Category",category_list)
+
+        issue_list=programme_df[programme_df["category"]==selected_category]["issue_name"].tolist()
+
+        selected_issue=st.selectbox("Select Issue",issue_list)
+
         st.subheader(f"📌 {selected_issue}")
         st.caption(f"Category: {selected_category}")
-        issue_path=os.path.join(category_path,selected_issue)
-        images=[
-            image for image in os.listdir(issue_path)
-            if image.lower().endswith((".jpg",".jpeg",".png",".webp"))
-        ]
-        if not images:
-            st.info("📷 No pictures available for this issue.")
-            st.stop()
-        images.sort()
-        cols=st.columns(3)
-        for i,image in enumerate(images):
-            with cols[i%3]:
-                image_path=os.path.join(issue_path,image)
-                st.image(image_path,use_container_width=True)
-                filename=os.path.splitext(image)[0]
-                if "_" in filename:
-                    uploader=filename.split("_")[0]
-                else:
-                    uploader=filename
-                st.caption(f"👤 Uploaded by: {uploader}")
+
+        folder_path=os.path.join("gallery",format_name(selected_category),format_name(selected_issue))
+
+        if os.path.exists(folder_path):
+
+            images=[img for img in os.listdir(folder_path) if img.lower().endswith((".jpg",".jpeg",".png"))]
+
+            if images:
+
+                cols=st.columns(3)
+
+                for i,image in enumerate(images):
+                    with cols[i%3]:
+                        st.image(os.path.join(folder_path,image),use_container_width=True)
+
+            else:
+                st.info("No images uploaded for this issue.")
+
+        else:
+            st.info("No gallery available.")
+
+
     elif gallery_option=="Publish your Gallery":
-        st.subheader("📸 Publish Your Gallery")
-        st.info("You can add gallery images to the repository under the gallery folder.")
-        st.write("Recommended structure:")
-        st.code("gallery/Category/Issue/image.jpg")
+
+        st.header("📤 Publish Your Gallery")
+
+        username=st.session_state.get("username","")
+
+        if username=="":
+            st.warning("⚠️ Please login first.")
+            st.stop()
+
+        try:
+            joined_df=pd.read_csv("joined_programmes.csv")
+            programme_df=pd.read_csv("programmesandty.csv")
+        except FileNotFoundError:
+            st.error("❌ Required CSV files missing")
+            st.stop()
+
+        user_programmes=joined_df[joined_df["username"]==username]
+
+        if user_programmes.empty:
+            st.warning("⚠️ You have not joined any programmes.")
+            st.stop()
+
+        programme_list=user_programmes["programme name"].unique()
+
+        selected_programme=st.selectbox("Select Joined Programme",programme_list)
+
+        programme_data=user_programmes[user_programmes["programme name"]==selected_programme]
+
+        programme_type=programme_data["Type"].values[0]
+
+        matching_data=programme_df[programme_df["category"]==programme_type]
+
+        if matching_data.empty:
+            st.error("This programme type is not available.")
+            st.stop()
+
+        issue_list=matching_data["issue_name"].tolist()
+
+        selected_issue=st.selectbox("Select Issue",issue_list)
+
+        st.info(f"🏷️ Category: {programme_type}")
+
+        if "upload_key" not in st.session_state:
+            st.session_state.upload_key=0
+
+        proof=st.file_uploader("Upload Gallery Image",type=["jpg","jpeg","png"],key=f"proof_{st.session_state.upload_key}")
+
+        col1,col2=st.columns(2)
+
+        with col1:
+            upload_btn=st.button("📤 Upload")
+
+        with col2:
+            clear_btn=st.button("🗑️ Clear")
+
+        if clear_btn:
+            st.session_state.upload_key+=1
+            st.rerun()
+
+        if upload_btn:
+
+            if proof is None:
+                st.warning("⚠️ Please upload an image.")
+
+            else:
+
+                folder_path=os.path.join("gallery",format_name(programme_type),format_name(selected_issue))
+
+                os.makedirs(folder_path,exist_ok=True)
+
+                file_path=os.path.join(folder_path,proof.name)
+
+                with open(file_path,"wb") as f:
+                    f.write(proof.getbuffer())
+                st.success("✅ Image uploaded successfully!")
+                st.session_state.upload_key+=1
+                st.rerun()
+
 
 elif selected=="About Voxlocal":
     st.header("🌍 About VoxLocal")
