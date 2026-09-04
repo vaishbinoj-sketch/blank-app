@@ -129,9 +129,9 @@ else:
                 datejoin=st.date_input("Joining Date")
             with col4:
                 mail=st.text_input("Mail ID")
-            new_user=st.text_input("Username")
-            new_pass=st.text_input("Password",type="password")
-            confirm_pass=st.text_input("Confirm Password",type="password")
+                new_user=st.text_input("Username")
+                new_pass=st.text_input("Password",type="password")
+                confirm_pass=st.text_input("Confirm Password",type="password")
             if st.button("Register"):
                 if not name.strip():
                     st.error("⚠️ Please enter your name.")
@@ -149,16 +149,13 @@ else:
                     st.success("✅ Account created successfully! Go to Login.")
                 else:
                     st.warning("⚠️ Username already exists.")
-            elif choice == "Login":
+        elif choice == "Login":
                 users = pd.read_csv("users.csv")
                 st.subheader("🔐 Login")
                 username = st.text_input("Username")
                 password = st.text_input("Password", type="password")
                 if st.button("Login"):
-                    match = users[
-                        (users["username"] == username) & 
-                        (users["password"] == password)
-                    ]
+                    match = users[(users["username"] == username) & (users["password"] == password)]
                     if not match.empty:
                         st.session_state["logged_in"] = True
                         st.session_state["username"] = username
