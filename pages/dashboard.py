@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as pl
 from streamlit_option_menu import option_menu
+
 st.set_page_config(page_title="Dashboard", layout="wide")
 
 st.markdown("""
@@ -90,6 +91,7 @@ if selected == "Home":
         col2.metric("Resolved", resolved)
         col3.metric("In Progress", progress)
         col4.metric("Pending", pending)
+
         # Pie Chart
         st.subheader("📌 Issue Distribution")
         issue_counts = df["Issue"].value_counts()
@@ -107,115 +109,116 @@ if selected == "Home":
         st.bar_chart(status_counts)
 
 # ---------- REPORT ISSUE ----------
-elif selected == "Report an Issue":
+elif selected=="Report an Issue":
     st.subheader("📝 Report an Issue")
-
-    if "submitted" in st.session_state:
+    if st.session_state.get("submitted",False):
         st.success("✅ Issue reported successfully!")
         del st.session_state["submitted"]
-
-    with st.form("issue_form", clear_on_submit=True):
-        name = st.text_input("Name")
-        issue = st.text_input("Issue")
-        location = st.text_input("Location")
-        description = st.text_area("Description")
-
-        priority = st.selectbox(
-            "Priority",
-            ["Very High", "High", "Medium", "Low", "Very Low"]
-        )
-
-        type_issue = st.selectbox("Type of Issue",[
-        "Environment",
-        "Infrastructure",
-        "Health & Sanitation",
-        "Safety & Security",
-        "Education & Awareness",
-        "Social Welfare",
-        "Animal Welfare",
-        "Disaster Management",
-        "Technology",
-        "Community Activities",
-        "Others"])
-        proof = st.file_uploader(
-            "Upload Proof of Issue",
-            type=["jpg", "jpeg", "png", "pdf"]
-        )
-
-        submit = st.form_submit_button("Submit")
-
+    with st.form("issue_form",clear_on_submit=True):
+        name=st.text_input("Name *")
+        issue=st.text_input("Issue *")
+        location=st.text_input("Location *")
+        description=st.text_area("Description *")
+        priority=st.selectbox("Priority *",["Very High","High","Medium","Low","Very Low"])
+        type_issue=st.selectbox("Type of Issue *",["Environment","Infrastructure","Health & Sanitation","Safety & Security","Education & Awareness","Social Welfare","Animal Welfare","Disaster Management","Technology","Community Activities","Others"])
+        proof=st.file_uploader("Upload Proof of Issue *",type=["jpg","jpeg","png","pdf"])
+        submit=st.form_submit_button("Submit")
         if submit:
-            if not name or not issue or not proof:
-                st.error("⚠️ Please fill required fields")
+            if not name.strip():
+                st.error("⚠️ Please enter your name.")
+            elif not issue.strip():
+                st.error("⚠️ Please enter the issue.")
+            elif not location.strip():
+                st.error("⚠️ Please enter the location.")
+            elif not description.strip():
+                st.error("⚠️ Please enter a description.")
+            elif not proof:
+                st.error("⚠️ Please upload proof of the issue.")
             else:
-                import os
-                import pandas as pd
-
-                # Create folder if not exists
-                if not os.path.exists("proof_issue"):
-                    os.makedirs("proof_issue")
-
-                # Save file
-                proof_path = "proof_issue/" + proof.name
-                with open(proof_path, "wb") as f:
-                    f.write(proof.getbuffer())
-
-                # Create new row
-                new_data = pd.DataFrame({
-                    "Name": [name],
-                    "Issue": [issue],
-                    "Type": [type_issue],
-                    "Status": ["Pending"],
-                    "Location": [location],
-                    "Description": [description],
-                    "Priority": [priority],
-                    "Proof": [proof_path]
-                })
-
-                # Load existing data
-                df = load_issues()
-
-                # Append
-                df = pd.concat([df, new_data], ignore_index=True)
-
-                # Save
-                df.to_csv("issues.csv", index=False)
-
-                st.session_state["submitted"] = True
-                st.rerun()
+                try:
+                    import os
+                    import pandas as pd
+                    os.makedirs("proof_issue",exist_ok=True)
+                    proof_path=os.path.join("proof_issue",proof.name)
+                    with open(proof_path,"wb") as f:
+                        f.write(proof.getbuffer())
+                    new_data=pd.DataFrame({
+                        "Name":[name.strip()],
+                        "Issue":[issue.strip()],
+                        "Type":[type_issue],
+                        "Status":["Pending"],
+                        "Location":[location.strip()],
+                        "Description":[description.strip()],
+                        "Priority":[priority],
+                        "Proof":[proof_path]
+                    })
+                    if os.path.exists("issues.csv"):
+                        df=pd.read_csv("issues.csv")
+                    else:
+                        df=pd.DataFrame(columns=["Name","Issue","Type","Status","Location","Description","Priority","Proof"])
+                    df=pd.concat([df,new_data],ignore_index=True)
+                    df.to_csv("issues.csv",index=False)
+                    st.session_state["submitted"]=True
+                    st.rerun()
+                except Exception as e:
+                    st.error("❌ An error occurred while submitting the issue.")
+                    st.error(f"Error details: {e}")
+                    
 elif selected=="Create & Invite":
-    st.subheader("📝 Invite others for your Programme ")
-    if "submitted" in st.session_state:
-        st.success("✅ Programme successfully Published!")
+    st.subheader("📝 Invite others for your Programme")
+    if st.session_state.get("submitted",False):
+        st.success("✅ Programme published successfully!")
         del st.session_state["submitted"]
-    with st.form("programme_form", clear_on_submit=True):
-        name =st.text_input("Enter name of the programme:",key="name")
-        date =st.date_input("Enter date:",key="date")
-        venue =st.text_input("Enter venue:", key="venue")
-        description=st.text_area("Describe the programme:",key="description")
-        link=st.text_input("Enter link for the participants registration:",key="link")
-        submit = st.form_submit_button("Publish Programme")
+    with st.form("programme_form",clear_on_submit=True):
+        name=st.text_input("Enter name of the programme:")
+        date=st.date_input("Enter date:")
+        venue=st.text_input("Enter venue:")
+        description=st.text_area("Describe the programme:")
+        link=st.text_input("Enter link for the participants registration:")
+        submit=st.form_submit_button("Publish Programme")
         if submit:
-            # Create a dictionary
-            issue = {
-                "Programme Name": [name],
-                "Date": [date],
-                "Venue": [venue],
-                "Description": [description],
-                "Registration Link": [link]
-            }
-            # Convert dictionary to DataFrame
-            new_programme = pd.DataFrame(issue)
-            # Read existing data and add new issue
-            try:
-                old_data = pd.read_csv("programmes.csv")
-                df = pd.concat([old_data, new_programme], ignore_index=True)
-            except FileNotFoundError:
-                df = new_programme
-            # Save updated CSV
-            df.to_csv("programmes.csv",index=False)
-            st.session_state["submitted"] = True
-            st.rerun()
+            if not name.strip():
+                st.error("⚠️ Please enter the programme name.")
+            elif not venue.strip():
+                st.error("⚠️ Please enter the venue.")
+            elif not description.strip():
+                st.error("⚠️ Please enter a description.")
+            elif not link.strip():
+                st.error("⚠️ Please enter the registration link.")
+            else:
+                try:
+                    import os
+                    import pandas as pd
+                    if os.path.exists("programmes.csv"):
+                        old_data=pd.read_csv("programmes.csv")
+                    else:
+                        old_data=pd.DataFrame(columns=["ID","Programme Name","Date","Venue","Description","Registration Link"])
+                    if "ID" not in old_data.columns:
+                        old_data["ID"]=range(1,len(old_data)+1)
+                    old_data["ID"]=pd.to_numeric(old_data["ID"],errors="coerce").fillna(0).astype(int)
+                    if len(old_data)>0:
+                        new_id=old_data["ID"].max()+1
+                    else:
+                        new_id=1
+                    new_programme=pd.DataFrame({
+                        "ID":[new_id],
+                        "Programme Name":[name.strip()],
+                        "Date":[date],
+                        "Venue":[venue.strip()],
+                        "Description":[description.strip()],
+                        "Registration Link":[link.strip()]
+                    })
+                    df=pd.concat([old_data,new_programme],ignore_index=True)
+                    df.to_csv("programmes.csv",index=False)
+                    st.session_state["submitted"]=True
+                    st.rerun()
+                except PermissionError:
+                    st.error("❌ Permission denied. The programme could not be saved.")
+                except pd.errors.EmptyDataError:
+                    st.error("❌ programmes.csv is empty or corrupted.")
+                except Exception as e:
+                    st.error("❌ An error occurred while publishing the programme.")
+                    st.error(f"Error details: {e}")
 # ---------- JOIN PROGRAMMES ----------
 elif selected == "Announcements":
     programme_option = st.selectbox(label="Choose an Option",options=["View Programmes","My Joined Programmes"])
@@ -564,127 +567,92 @@ if not os.path.exists("gallery"):
     os.makedirs("gallery")
 
 elif selected=="Gallery":
-
     gallery_option=st.selectbox("Choose an Option",["View Voxlocal Gallery","Publish your Gallery"])
-
     def format_name(name):
         return str(name).strip().lower().replace(" ","_")
-
     if gallery_option=="View Voxlocal Gallery":
-
         st.header("🖼️ VoxLocal Gallery")
-
         try:
             programme_df=pd.read_csv("programmesandty.csv")
+            joined_df=pd.read_csv("joined_programmes.csv")
         except FileNotFoundError:
-            st.error("❌ programmesandty.csv not found")
+            st.error("❌ Required CSV file not found")
             st.stop()
-
         category_list=programme_df["category"].unique()
-
         selected_category=st.selectbox("Select Category",category_list)
-
         issue_list=programme_df[programme_df["category"]==selected_category]["issue_name"].tolist()
-
         selected_issue=st.selectbox("Select Issue",issue_list)
-
         st.subheader(f"📌 {selected_issue}")
         st.caption(f"Category: {selected_category}")
-
         folder_path=os.path.join("gallery",format_name(selected_category),format_name(selected_issue))
-
         if os.path.exists(folder_path):
-
             images=[img for img in os.listdir(folder_path) if img.lower().endswith((".jpg",".jpeg",".png"))]
-
             if images:
-
+                uploader_data=joined_df[(joined_df["Type"].astype(str).str.strip()==str(selected_category).strip())&(joined_df["Issue"].astype(str).str.strip()==str(selected_issue).strip())]
                 cols=st.columns(3)
-
                 for i,image in enumerate(images):
                     with cols[i%3]:
-                        st.image(os.path.join(folder_path,image),use_container_width=True)
-
+                        image_path=os.path.join(folder_path,image)
+                        st.image(image_path,use_container_width=True)
+                        if "_" in image:
+                            uploader=image.rsplit("_",1)[0]
+                            st.caption(f"👤 Uploaded by: {uploader}")
+                        elif not uploader_data.empty:
+                            uploader=uploader_data["username"].iloc[0]
+                            st.caption(f"👤 Uploaded by: {uploader}")
+                        else:
+                            st.caption("👤 Uploaded by: Unknown")
             else:
                 st.info("No images uploaded for this issue.")
-
         else:
             st.info("No gallery available.")
-
-
     elif gallery_option=="Publish your Gallery":
-
         st.header("📤 Publish Your Gallery")
-
         username=st.session_state.get("username","")
-
         if username=="":
             st.warning("⚠️ Please login first.")
             st.stop()
-
         try:
             joined_df=pd.read_csv("joined_programmes.csv")
             programme_df=pd.read_csv("programmesandty.csv")
         except FileNotFoundError:
             st.error("❌ Required CSV files missing")
             st.stop()
-
         user_programmes=joined_df[joined_df["username"]==username]
-
         if user_programmes.empty:
             st.warning("⚠️ You have not joined any programmes.")
             st.stop()
-
         programme_list=user_programmes["programme name"].unique()
-
         selected_programme=st.selectbox("Select Joined Programme",programme_list)
-
         programme_data=user_programmes[user_programmes["programme name"]==selected_programme]
-
+        uploader=programme_data["username"].iloc[0]
         programme_type=programme_data["Type"].values[0]
-
         matching_data=programme_df[programme_df["category"]==programme_type]
-
         if matching_data.empty:
             st.error("This programme type is not available.")
             st.stop()
-
         issue_list=matching_data["issue_name"].tolist()
-
         selected_issue=st.selectbox("Select Issue",issue_list)
-
         st.info(f"🏷️ Category: {programme_type}")
-
+        st.info(f"📌 Issue: {selected_issue}")
         if "upload_key" not in st.session_state:
             st.session_state.upload_key=0
-
         proof=st.file_uploader("Upload Gallery Image",type=["jpg","jpeg","png"],key=f"proof_{st.session_state.upload_key}")
-
         col1,col2=st.columns(2)
-
         with col1:
             upload_btn=st.button("📤 Upload")
-
         with col2:
             clear_btn=st.button("🗑️ Clear")
-
         if clear_btn:
             st.session_state.upload_key+=1
             st.rerun()
-
         if upload_btn:
-
             if proof is None:
                 st.warning("⚠️ Please upload an image.")
-
             else:
-
                 folder_path=os.path.join("gallery",format_name(programme_type),format_name(selected_issue))
-
                 os.makedirs(folder_path,exist_ok=True)
-
-                file_path=os.path.join(folder_path,proof.name)
-
+                file_path=os.path.join(folder_path,f"{uploader}_{proof.name}")
                 with open(file_path,"wb") as f:
                     f.write(proof.getbuffer())
                 st.success("✅ Image uploaded successfully!")
