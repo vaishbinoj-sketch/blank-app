@@ -394,7 +394,6 @@ elif selected == "My Profile":
             if st.session_state.get("profile_updated", False):
                 st.success("Profile updated successfully ✅")
                 st.session_state["profile_updated"] = False
-            st.subheader("👤 Profile Information")
             col1, col2 = st.columns(2)
             with col1:
                 st.text_input("Name", value=str(user_data["Name"]), disabled=True, key="display_name")
