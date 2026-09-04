@@ -385,66 +385,89 @@ elif selected == "Announcements":
 elif selected == "My Profile":
     st.header("👤 My Profile")
 
+    # Check if user is logged in
     if "logged_in" in st.session_state and st.session_state["logged_in"]:
 
         username = st.session_state["username"]
 
+        # Read users.csv
         users = pd.read_csv("users.csv")
 
         # Find logged-in user
         user_rows = users[users["username"] == username]
 
         if not user_rows.empty:
+
             user_index = user_rows.index[0]
             user_data = users.loc[user_index]
 
-            # ---------------- PROFILE DISPLAY ----------------
+            # ==================================================
+            # SUCCESS MESSAGE
+            # ==================================================
+
+            if st.session_state.get("profile_updated", False):
+                st.success("Profile updated successfully ✅")
+                st.session_state["profile_updated"] = False
+
+            # ==================================================
+            # PROFILE INFORMATION
+            # ==================================================
+
             col1, col2 = st.columns(2)
 
             with col1:
+
                 st.text_input(
                     "Name",
-                    value=user_data["Name"],
+                    value=str(user_data["Name"]),
                     disabled=True
                 )
 
                 st.text_input(
                     "Email",
-                    value=user_data["Mail ID"],
+                    value=str(user_data["Mail ID"]),
                     disabled=True
                 )
 
                 st.text_input(
                     "Date of Birth",
-                    value=user_data["dateofbirth"],
+                    value=str(user_data["dateofbirth"]),
                     disabled=True
                 )
 
             with col2:
+
                 st.text_input(
                     "Username",
-                    value=user_data["username"],
+                    value=str(user_data["username"]),
                     disabled=True
                 )
 
                 st.text_input(
                     "Date of Join",
-                    value=user_data["dateofjoin"],
+                    value=str(user_data["dateofjoin"]),
                     disabled=True
                 )
 
-            # ---------------- EDIT SECTION ----------------
+            # ==================================================
+            # EDIT PROFILE
+            # ==================================================
+
             st.subheader("✏️ Edit Profile")
 
             new_name = st.text_input(
                 "Edit Name",
-                value=user_data["Name"]
+                value=str(user_data["Name"])
             )
 
             new_email = st.text_input(
                 "Edit Email",
-                value=user_data["Mail ID"]
+                value=str(user_data["Mail ID"])
             )
+
+            # ==================================================
+            # CHANGE PASSWORD
+            # ==================================================
 
             change_password = st.checkbox("Change Password 🔒")
 
@@ -452,6 +475,7 @@ elif selected == "My Profile":
             confirm_password = ""
 
             if change_password:
+
                 new_password = st.text_input(
                     "New Password",
                     type="password"
@@ -462,51 +486,82 @@ elif selected == "My Profile":
                     type="password"
                 )
 
-            # ---------------- SAVE BUTTON ----------------
+            # ==================================================
+            # SAVE CHANGES
+            # ==================================================
+
             if st.button("💾 Save Changes"):
 
-                # Name validation
+                # -----------------------------
+                # Validate Name
+                # -----------------------------
+
                 if not new_name.strip():
+
                     st.error("Please enter your name ❌")
                     st.stop()
 
-                # Email validation
+                # -----------------------------
+                # Validate Email
+                # -----------------------------
+
                 if not new_email.strip():
+
                     st.error("Please enter your email ❌")
                     st.stop()
 
-                # Password validation
+                # -----------------------------
+                # Validate Password
+                # -----------------------------
+
                 if change_password:
 
                     if not new_password:
+
                         st.error("Please enter a new password ❌")
                         st.stop()
 
                     if not confirm_password:
+
                         st.error("Please confirm your new password ❌")
                         st.stop()
 
                     if new_password != confirm_password:
+
                         st.error("Passwords do not match ❌")
                         st.stop()
 
+                    # Update password
                     users.at[user_index, "password"] = new_password
 
-                # Update profile details
-                users.at[user_index, "Name"] = new_name
-                users.at[user_index, "Mail ID"] = new_email
+                # -----------------------------
+                # Update Name and Email
+                # -----------------------------
 
-                # Save to CSV
+                users.at[user_index, "Name"] = new_name.strip()
+                users.at[user_index, "Mail ID"] = new_email.strip()
+
+                # -----------------------------
+                # Save CSV
+                # -----------------------------
+
                 users.to_csv("users.csv", index=False)
 
-                st.success("Profile updated successfully ✅")
+                # -----------------------------
+                # Store Success Message
+                # -----------------------------
 
+                st.session_state["profile_updated"] = True
+
+                # Refresh page
                 st.rerun()
 
         else:
+
             st.error("User profile not found ❌")
 
     else:
+
         st.warning("Please login to view your profile.")
 #------Acheivements----------
 elif selected == "Achievements":
