@@ -1,47 +1,39 @@
+import os
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as pl
 from streamlit_option_menu import option_menu
 
-st.set_page_config(page_title="Dashboard", layout="wide")
+st.set_page_config(page_title="VoxLocal Dashboard",layout="wide")
 
 st.markdown("""
 <style>
-[data-testid="stSidebarNav"] {
-    display: none;
-}
+[data-testid="stSidebarNav"]{display:none;}
 </style>
-""", unsafe_allow_html=True)
+""",unsafe_allow_html=True)
 
-# ---------- BACKGROUND ----------
 def set_gif_bg():
-    gif_url = "https://cdn.dribbble.com/userupload/20481043/file/original-ff919c0d8190474293a4a448343b80e2.gif"
-    st.markdown(
-        f"""
-        <style>
-        .stApp {{
-            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)),
-                        url("{gif_url}");
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-        }}
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+    gif_url="https://cdn.dribbble.com/userupload/20481043/file/original-ff919c0d8190474293a4a448343b80e2.gif"
+    st.markdown(f"""
+    <style>
+    .stApp{{
+        background:linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.5)),url("{gif_url}");
+        background-size:cover;
+        background-position:center;
+        background-repeat:no-repeat;
+        background-attachment:fixed;
+    }}
+    </style>
+    """,unsafe_allow_html=True)
 
 set_gif_bg()
 
-# ---------- SESSION CHECK ----------
 if "logged_in" not in st.session_state or not st.session_state.logged_in:
     st.warning("⚠️ Please login first")
     st.stop()
 
-# ---------- SIDEBAR MENU ----------
 with st.sidebar:
-    selected = option_menu(
+    selected=option_menu(
         menu_title="Menu",
         options=[
             "Home",
@@ -54,73 +46,100 @@ with st.sidebar:
             "About Voxlocal",
             "Logout"
         ],
-        icons=["house", "plus-circle","envelope", "bell", "person","trophy","laptop", "info", "power"],
-        default_index=0,
+        icons=[
+            "house",
+            "plus-circle",
+            "envelope",
+            "bell",
+            "person",
+            "trophy",
+            "images",
+            "info",
+            "power"
+        ],
+        default_index=0
     )
 
-# ---------- LOAD DATA ----------
 @st.cache_data
 def load_issues():
     try:
         return pd.read_csv("issues.csv")
     except FileNotFoundError:
-        return pd.DataFrame(columns=["Name","Issue","Status","Location","Description","Priority"])
+        return pd.DataFrame(columns=["Name","username","Issue","Type","Status","Location","Description","Priority","Proof"])
 
-# ---------- HOME ----------
+def save_issue(data):
+    try:
+        if os.path.exists("issues.csv"):
+            old_data=pd.read_csv("issues.csv")
+        else:
+            old_data=pd.DataFrame(columns=["Name","username","Issue","Type","Status","Location","Description","Priority","Proof"])
+        required_columns=["Name","username","Issue","Type","Status","Location","Description","Priority","Proof"]
+        for column in required_columns:
+            if column not in old_data.columns:
+                old_data[column]=""
+        old_data=old_data[required_columns]
+        final_data=pd.concat([old_data,data],ignore_index=True)
+        final_data.to_csv("issues.csv",index=False)
+        load_issues.clear()
+        return True
+    except Exception as e:
+        st.error(f"❌ Error saving issue: {e}")
+        return False
 
-if selected == "Home":
-    st.title("Dashboard")
+if selected=="Home":
+    st.title("🏠 Dashboard")
     st.markdown(f"Welcome, **{st.session_state.get('username','User')}** 👋")
-
-    df = load_issues()
-
+    df=load_issues()
     if df.empty:
         st.warning("No issues reported yet.")
     else:
         st.subheader("📊 Overview")
-        st.dataframe(df)
-
-        # Metrics
-        total = len(df)
-        resolved = len(df[df["Status"] == "Resolved"])
-        pending = len(df[df["Status"] == "Pending"])
-        progress = len(df[df["Status"] == "In Progress"])
-
-        col1, col2, col3, col4 = st.columns(4)
-        col1.metric("Total Issues", total)
-        col2.metric("Resolved", resolved)
-        col3.metric("In Progress", progress)
-        col4.metric("Pending", pending)
-
-        # Pie Chart
+        st.dataframe(df,use_container_width=True)
+        total=len(df)
+        resolved=len(df[df["Status"].astype(str).str.lower()=="resolved"])
+        pending=len(df[df["Status"].astype(str).str.lower()=="pending"])
+        progress=len(df[df["Status"].astype(str).str.lower()=="in progress"])
+        col1,col2,col3,col4=st.columns(4)
+        col1.metric("Total Issues",total)
+        col2.metric("Resolved",resolved)
+        col3.metric("In Progress",progress)
+        col4.metric("Pending",pending)
         st.subheader("📌 Issue Distribution")
-        issue_counts = df["Issue"].value_counts()
-
-        fig, ax = pl.subplots(figsize=(4,4))
-        fig.patch.set_facecolor("#DBD4D4")
-        ax.pie(issue_counts, labels=issue_counts.index, autopct='%1.1f%%', radius=0.7)
-        ax.axis("equal")
-
-        st.pyplot(fig)
-
-        # Bar Chart
+        if "Issue" in df.columns and not df["Issue"].empty:
+            issue_counts=df["Issue"].value_counts()
+            fig,ax=pl.subplots(figsize=(5,5))
+            ax.pie(issue_counts,labels=issue_counts.index,autopct="%1.1f%%",radius=0.8)
+            ax.axis("equal")
+            st.pyplot(fig)
         st.subheader("📈 Status Distribution")
-        status_counts = df["Status"].value_counts()
-        st.bar_chart(status_counts)
+        if "Status" in df.columns:
+            status_counts=df["Status"].value_counts()
+            st.bar_chart(status_counts)
 
-# ---------- REPORT ISSUE ----------
 elif selected=="Report an Issue":
     st.subheader("📝 Report an Issue")
-    if st.session_state.get("submitted",False):
+    if st.session_state.get("issue_submitted",False):
         st.success("✅ Issue reported successfully!")
-        del st.session_state["submitted"]
+        del st.session_state["issue_submitted"]
     with st.form("issue_form",clear_on_submit=True):
         name=st.text_input("Name *")
         issue=st.text_input("Issue *")
         location=st.text_input("Location *")
         description=st.text_area("Description *")
         priority=st.selectbox("Priority *",["Very High","High","Medium","Low","Very Low"])
-        type_issue=st.selectbox("Type of Issue *",["Environment","Infrastructure","Health & Sanitation","Safety & Security","Education & Awareness","Social Welfare","Animal Welfare","Disaster Management","Technology","Community Activities","Others"])
+        type_issue=st.selectbox("Type of Issue *",[
+            "Environment",
+            "Infrastructure",
+            "Health & Sanitation",
+            "Safety & Security",
+            "Education & Awareness",
+            "Social Welfare",
+            "Animal Welfare",
+            "Disaster Management",
+            "Technology",
+            "Community Activities",
+            "Others"
+        ])
         proof=st.file_uploader("Upload Proof of Issue *",type=["jpg","jpeg","png","pdf"])
         submit=st.form_submit_button("Submit")
         if submit:
@@ -132,18 +151,18 @@ elif selected=="Report an Issue":
                 st.error("⚠️ Please enter the location.")
             elif not description.strip():
                 st.error("⚠️ Please enter a description.")
-            elif not proof:
+            elif proof is None:
                 st.error("⚠️ Please upload proof of the issue.")
             else:
                 try:
-                    import os
-                    import pandas as pd
                     os.makedirs("proof_issue",exist_ok=True)
-                    proof_path=os.path.join("proof_issue",proof.name)
+                    safe_filename=os.path.basename(proof.name)
+                    proof_path=os.path.join("proof_issue",safe_filename)
                     with open(proof_path,"wb") as f:
                         f.write(proof.getbuffer())
                     new_data=pd.DataFrame({
                         "Name":[name.strip()],
+                        "username":[st.session_state.get("username","")],
                         "Issue":[issue.strip()],
                         "Type":[type_issue],
                         "Status":["Pending"],
@@ -152,29 +171,24 @@ elif selected=="Report an Issue":
                         "Priority":[priority],
                         "Proof":[proof_path]
                     })
-                    if os.path.exists("issues.csv"):
-                        df=pd.read_csv("issues.csv")
-                    else:
-                        df=pd.DataFrame(columns=["Name","Issue","Type","Status","Location","Description","Priority","Proof"])
-                    df=pd.concat([df,new_data],ignore_index=True)
-                    df.to_csv("issues.csv",index=False)
-                    st.session_state["submitted"]=True
-                    st.rerun()
+                    if save_issue(new_data):
+                        st.session_state["issue_submitted"]=True
+                        st.rerun()
                 except Exception as e:
                     st.error("❌ An error occurred while submitting the issue.")
                     st.error(f"Error details: {e}")
-                    
+
 elif selected=="Create & Invite":
-    st.subheader("📝 Invite others for your Programme")
-    if st.session_state.get("submitted",False):
+    st.subheader("📝 Invite Others for Your Programme")
+    if st.session_state.get("programme_submitted",False):
         st.success("✅ Programme published successfully!")
-        del st.session_state["submitted"]
-    with st.form("programme_form",clear_on_submit=True):
+        del st.session_state["programme_submitted"]
+    with st.form("create_programme_form",clear_on_submit=True):
         name=st.text_input("Enter name of the programme:")
         date=st.date_input("Enter date:")
         venue=st.text_input("Enter venue:")
         description=st.text_area("Describe the programme:")
-        link=st.text_input("Enter link for the participants registration:")
+        link=st.text_input("Enter link for participant registration:")
         submit=st.form_submit_button("Publish Programme")
         if submit:
             if not name.strip():
@@ -187,19 +201,16 @@ elif selected=="Create & Invite":
                 st.error("⚠️ Please enter the registration link.")
             else:
                 try:
-                    import os
-                    import pandas as pd
                     if os.path.exists("programmes.csv"):
                         old_data=pd.read_csv("programmes.csv")
                     else:
                         old_data=pd.DataFrame(columns=["ID","Programme Name","Date","Venue","Description","Registration Link"])
-                    if "ID" not in old_data.columns:
-                        old_data["ID"]=range(1,len(old_data)+1)
+                    required=["ID","Programme Name","Date","Venue","Description","Registration Link"]
+                    for column in required:
+                        if column not in old_data.columns:
+                            old_data[column]=""
                     old_data["ID"]=pd.to_numeric(old_data["ID"],errors="coerce").fillna(0).astype(int)
-                    if len(old_data)>0:
-                        new_id=old_data["ID"].max()+1
-                    else:
-                        new_id=1
+                    new_id=int(old_data["ID"].max()+1) if len(old_data)>0 else 1
                     new_programme=pd.DataFrame({
                         "ID":[new_id],
                         "Programme Name":[name.strip()],
@@ -208,28 +219,22 @@ elif selected=="Create & Invite":
                         "Description":[description.strip()],
                         "Registration Link":[link.strip()]
                     })
-                    df=pd.concat([old_data,new_programme],ignore_index=True)
-                    df.to_csv("programmes.csv",index=False)
-                    st.session_state["submitted"]=True
+                    final_data=pd.concat([old_data[required],new_programme],ignore_index=True)
+                    final_data.to_csv("programmes.csv",index=False)
+                    st.session_state["programme_submitted"]=True
                     st.rerun()
-                except PermissionError:
-                    st.error("❌ Permission denied. The programme could not be saved.")
-                except pd.errors.EmptyDataError:
-                    st.error("❌ programmes.csv is empty or corrupted.")
                 except Exception as e:
                     st.error("❌ An error occurred while publishing the programme.")
                     st.error(f"Error details: {e}")
-# ---------- JOIN PROGRAMMES ----------
-elif selected == "Announcements":
-    programme_option = st.selectbox(label="Choose an Option",options=["View Programmes","My Joined Programmes"])
 
-    if programme_option == "View Programmes":
+elif selected=="Announcements":
+    programme_option=st.selectbox("Choose an Option",["View Programmes","My Joined Programmes"])
+    if programme_option=="View Programmes":
         try:
-            df = pd.read_csv("programmes.csv")
+            df=pd.read_csv("programmes.csv")
         except FileNotFoundError:
             st.warning("No programmes available.")
             st.stop()
-
         st.markdown("""
         <style>
         .card{
@@ -237,480 +242,317 @@ elif selected == "Announcements":
             padding:20px;
             border-radius:15px;
             margin-bottom:15px;
-            box-shadow:2px 2px 10px rgba(0,0,0,0.2);}
+            box-shadow:2px 2px 10px rgba(0,0,0,0.2);
+        }
         .title{
             font-size:20px;
             font-weight:bold;
-            color:#333;}
+            color:#333;
+        }
         .info{
             font-size:14px;
-            color:#555;}
+            color:#555;
+            margin-top:5px;
+        }
         </style>
         """,unsafe_allow_html=True)
-
-        for i,row in df.iterrows():
+        for _,row in df.iterrows():
+            programme_name=str(row.get("Programme Name",""))
+            programme_date=str(row.get("Date",""))
+            venue=str(row.get("Venue",""))
+            description=str(row.get("Description",""))
+            link=str(row.get("Registration Link",""))
             st.markdown(f"""
             <div class="card">
-            <div class="title">{row['Programme Name']}</div>
-            <div class="info">📅 <b>Date:</b> {row['Date']}</div>
-            <div class="info">📍 <b>Venue:</b> {row['Venue']}</div>
-            <div class="info">📝 {row['Description']}</div>
+            <div class="title">{programme_name}</div>
+            <div class="info">📅 <b>Date:</b> {programme_date}</div>
+            <div class="info">📍 <b>Venue:</b> {venue}</div>
+            <div class="info">📝 {description}</div>
             <br>
-            <a href="{row['Registration Link']}" target="_blank">
+            <a href="{link}" target="_blank">
             <button style="background-color:#4CAF50;color:white;border:none;padding:10px 15px;border-radius:8px;">
             🔗 Join Programme
             </button>
             </a>
             </div>
             """,unsafe_allow_html=True)
-
-
-    elif programme_option == "My Joined Programmes":
-
+    elif programme_option=="My Joined Programmes":
         st.header("🤝 Joined Programme Registration")
-
-        if "joined" in st.session_state:
-            st.success("✅ Programme registration submitted! Check Achievements for further confirmation")
+        if st.session_state.get("joined",False):
+            st.success("✅ Programme registration submitted!")
             del st.session_state["joined"]
-
-
-        # LOAD CATEGORY AND ISSUES
-
         try:
-            programme_df = pd.read_csv("programmesandty.csv")
-
-            programme_df["category"] = programme_df["category"].str.strip()
-            programme_df["issue_name"] = programme_df["issue_name"].str.strip()
-
+            programme_df=pd.read_csv("programmesandty.csv")
+            programme_df["category"]=programme_df["category"].astype(str).str.strip()
+            programme_df["issue_name"]=programme_df["issue_name"].astype(str).str.strip()
         except FileNotFoundError:
             st.error("programmesandty.csv not found")
             st.stop()
-
-
-        # CATEGORY SELECTBOX
-
-        programme_type = st.selectbox(
-            "Programme Type",
-            programme_df["category"].unique()
-        )
-
-
-        # FILTER ISSUE BASED ON CATEGORY
-
-        related_issues = programme_df[
-            programme_df["category"] == programme_type
-        ]["issue_name"].tolist()
-
-
-        # ISSUE SELECTBOX
-
-        issue = st.selectbox(
-            "Related Issue",
-            related_issues
-        )
-
-
-        with st.form("programme_form",clear_on_submit=True):
-
-            username = st.session_state.get("username","")
-
+        programme_type=st.selectbox("Programme Type",programme_df["category"].unique())
+        related_issues=programme_df[programme_df["category"]==programme_type]["issue_name"].tolist()
+        if not related_issues:
+            st.warning("No issues available for this category.")
+            st.stop()
+        issue=st.selectbox("Related Issue",related_issues)
+        with st.form("join_programme_form",clear_on_submit=True):
+            username=st.session_state.get("username","")
             st.text_input("Username",value=username,disabled=True)
-
-            programmename = st.text_input("Programme Name")
-
-            datejoined = st.date_input("Date of Registration")
-
-            programdate = st.date_input("Programme Date")
-
-
-            venue = st.text_input("Venue")
-
-
-            proof = st.file_uploader(
-                "Upload Proof of Participation",
-                type=["jpg","jpeg","png","pdf"]
-            )
-
-
-            submit = st.form_submit_button("✅ Submit")
-
-
+            programmename=st.text_input("Programme Name")
+            datejoined=st.date_input("Date of Registration")
+            programdate=st.date_input("Programme Date")
+            venue=st.text_input("Venue")
+            proof=st.file_uploader("Upload Proof of Participation",type=["jpg","jpeg","png","pdf"])
+            submit=st.form_submit_button("✅ Submit")
             if submit:
-
-                if not programmename or proof is None:
-                    st.error("⚠️ Please enter programme name and upload proof.")
-
+                if not programmename.strip():
+                    st.error("⚠️ Please enter programme name.")
+                elif not venue.strip():
+                    st.error("⚠️ Please enter venue.")
+                elif proof is None:
+                    st.error("⚠️ Please upload proof of participation.")
                 else:
-
-                    import os
-
-                    if not os.path.exists("proofs"):
-                        os.makedirs("proofs")
-
-
-                    proof_path = "proofs/"+proof.name
-
-
-                    with open(proof_path,"wb") as f:
-                        f.write(proof.getbuffer())
-
-
-                    new_data = pd.DataFrame({
-                        "username":[username],
-                        "programme name":[programmename],
-                        "Date Joined":[datejoined],
-                        "Programme Date":[programdate],
-                        "Type":[programme_type],
-                        "Issue":[issue],
-                        "Venue":[venue],
-                        "Proof":[proof.name],
-                        "Status":["Pending Verification"]
-                    })
-
-
                     try:
-                        joined = pd.read_csv("joined_programmes.csv")
-                        joined = pd.concat([joined,new_data],ignore_index=True)
+                        os.makedirs("proofs",exist_ok=True)
+                        safe_filename=os.path.basename(proof.name)
+                        proof_path=os.path.join("proofs",safe_filename)
+                        with open(proof_path,"wb") as f:
+                            f.write(proof.getbuffer())
+                        new_data=pd.DataFrame({
+                            "username":[username],
+                            "programme name":[programmename.strip()],
+                            "Date Joined":[datejoined],
+                            "Programme Date":[programdate],
+                            "Type":[programme_type],
+                            "Issue":[issue],
+                            "Venue":[venue.strip()],
+                            "Proof":[safe_filename],
+                            "Status":["Pending Verification"]
+                        })
+                        if os.path.exists("joined_programmes.csv"):
+                            joined=pd.read_csv("joined_programmes.csv")
+                            joined=pd.concat([joined,new_data],ignore_index=True)
+                        else:
+                            joined=new_data
+                        joined.to_csv("joined_programmes.csv",index=False)
+                        st.session_state["joined"]=True
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ Error: {e}")
 
-                    except FileNotFoundError:
-                        joined = new_data
-
-
-                    joined.to_csv("joined_programmes.csv",index=False)
-
-
-                    st.session_state["joined"] = True
-                    st.rerun()
-# ---------- PROFILE ----------
-elif selected == "My Profile":
+elif selected=="My Profile":
     st.header("👤 My Profile")
-    if st.session_state.get("logged_in", False):
-        username = st.session_state["username"]
-        users = pd.read_csv("users.csv")
-        user_rows = users[users["username"].astype(str) == str(username)]
-        if not user_rows.empty:
-            user_index = user_rows.index[0]
-            user_data = users.loc[user_index]
-            if st.session_state.get("profile_updated", False):
-                st.success("Profile updated successfully ✅")
-                st.session_state["profile_updated"] = False
-            col1, col2 = st.columns(2)
-            with col1:
-                st.text_input("Name", value=str(user_data["Name"]), disabled=True, key="display_name")
-                st.text_input("Email", value=str(user_data["Mail ID"]), disabled=True, key="display_email")
-                st.text_input("Date of Birth", value=str(user_data["dateofbirth"]), disabled=True, key="display_dob")
-            with col2:
-                st.text_input("Username", value=str(user_data["username"]), disabled=True, key="display_username")
-                st.text_input("Date of Join", value=str(user_data["dateofjoin"]), disabled=True, key="display_join")
-            st.divider()
-            st.subheader("✏️ Edit Profile")
-            new_name = st.text_input("Edit Name", value=str(user_data["Name"]), key="edit_name")
-            new_email = st.text_input("Edit Email", value=str(user_data["Mail ID"]), key="edit_email")
-            change_password = st.checkbox("Change Password 🔒", key="change_password")
-            new_password = ""
-            confirm_password = ""
-            if change_password:
-                new_password = st.text_input("New Password", type="password", key="new_password")
-                confirm_password = st.text_input("Confirm Password", type="password", key="confirm_password")
-            if st.button("💾 Save Changes", key="save_changes"):
-                if not new_name.strip():
-                    st.error("Please enter your name ❌")
-                    st.stop()
-                if not new_email.strip():
-                    st.error("Please enter your email ❌")
-                    st.stop()
-                if change_password:
-                    if not new_password:
-                        st.error("Please enter a new password ❌")
-                        st.stop()
-                    if not confirm_password:
-                        st.error("Please confirm your new password ❌")
-                        st.stop()
-                    if new_password != confirm_password:
-                        st.error("Passwords do not match ❌")
-                        st.stop()
-                users.at[user_index, "Name"] = new_name.strip()
-                users.at[user_index, "Mail ID"] = new_email.strip()
-                if change_password:
-                    users.at[user_index, "password"] = new_password
-                users.to_csv("users.csv", index=False)
-                st.session_state["Name"] = new_name.strip()
-                st.session_state["Mail ID"] = new_email.strip()
-                st.session_state["profile_updated"] = True
-                st.rerun()
-        else:
-            st.error("User profile not found ❌")
-    else:
-        st.warning("Please login to view your profile.")
-#------Acheivements----------
-elif selected == "Achievements":
-
-    st.header("🏆 My Achievements")
-
-    username = st.session_state.get("username", "")
-
+    username=st.session_state.get("username","")
     try:
-        issues = pd.read_csv("issues.csv")
-        programmes = pd.read_csv("joined_programmes.csv")
-
+        users=pd.read_csv("users.csv")
     except FileNotFoundError:
-        st.error("Required files are missing")
+        st.error("users.csv not found.")
         st.stop()
+    user_rows=users[users["username"].astype(str)==str(username)]
+    if user_rows.empty:
+        st.error("User profile not found ❌")
+    else:
+        user_index=user_rows.index[0]
+        user_data=users.loc[user_index]
+        if st.session_state.get("profile_updated",False):
+            st.success("Profile updated successfully ✅")
+            st.session_state["profile_updated"]=False
+        col1,col2=st.columns(2)
+        with col1:
+            st.text_input("Name",value=str(user_data["Name"]),disabled=True,key="display_name")
+            st.text_input("Email",value=str(user_data["Mail ID"]),disabled=True,key="display_email")
+            st.text_input("Date of Birth",value=str(user_data["dateofbirth"]),disabled=True,key="display_dob")
+        with col2:
+            st.text_input("Username",value=str(user_data["username"]),disabled=True,key="display_username")
+            st.text_input("Date of Join",value=str(user_data["dateofjoin"]),disabled=True,key="display_join")
+        st.divider()
+        st.subheader("✏️ Edit Profile")
+        new_name=st.text_input("Edit Name",value=str(user_data["Name"]),key="edit_name")
+        new_email=st.text_input("Edit Email",value=str(user_data["Mail ID"]),key="edit_email")
+        change_password=st.checkbox("Change Password 🔒",key="change_password")
+        new_password=""
+        confirm_password=""
+        if change_password:
+            new_password=st.text_input("New Password",type="password",key="new_password")
+            confirm_password=st.text_input("Confirm Password",type="password",key="confirm_password")
+        if st.button("💾 Save Changes",key="save_changes"):
+            if not new_name.strip():
+                st.error("Please enter your name ❌")
+                st.stop()
+            if not new_email.strip():
+                st.error("Please enter your email ❌")
+                st.stop()
+            if change_password:
+                if not new_password:
+                    st.error("Please enter a new password ❌")
+                    st.stop()
+                if new_password!=confirm_password:
+                    st.error("Passwords do not match ❌")
+                    st.stop()
+            users.at[user_index,"Name"]=new_name.strip()
+            users.at[user_index,"Mail ID"]=new_email.strip()
+            if change_password:
+                users.at[user_index,"password"]=new_password
+            users.to_csv("users.csv",index=False)
+            st.session_state["profile_updated"]=True
+            st.rerun()
 
-
-    # Filter user data
-    user_issues = issues[
-        issues["Name"] == username
-    ]
-
-    user_programmes = programmes[
-        programmes["username"] == username
-    ]
-
-
-    # Calculate achievements
-    total_issues = len(user_issues)
-
-    resolved_issues = len(
-        user_issues[
-            user_issues["Status"].str.lower() == "resolved"
-        ]
-    )
-
-    total_programmes = len(user_programmes)
-
-
-    # Contribution Section
-
+elif selected=="Achievements":
+    st.header("🏆 My Achievements")
+    username=st.session_state.get("username","")
+    try:
+        issues=pd.read_csv("issues.csv")
+    except FileNotFoundError:
+        issues=pd.DataFrame(columns=["Name","username","Issue","Type","Status","Location","Description","Priority","Proof"])
+    try:
+        programmes=pd.read_csv("joined_programmes.csv")
+    except FileNotFoundError:
+        programmes=pd.DataFrame(columns=["username","programme name","Date Joined","Programme Date","Type","Issue","Venue","Proof","Status"])
+    if "username" in issues.columns:
+        user_issues=issues[issues["username"].astype(str)==str(username)]
+    else:
+        user_issues=pd.DataFrame()
+    if "username" in programmes.columns:
+        user_programmes=programmes[programmes["username"].astype(str)==str(username)]
+    else:
+        user_programmes=pd.DataFrame()
+    total_issues=len(user_issues)
+    if "Status" in user_issues.columns:
+        resolved_issues=len(user_issues[user_issues["Status"].astype(str).str.lower()=="resolved"])
+    else:
+        resolved_issues=0
+    total_programmes=len(user_programmes)
     st.subheader("📊 Your Contribution")
-
-    col1, col2, col3 = st.columns(3)
-
-
+    col1,col2,col3=st.columns(3)
     with col1:
         st.info(f"📢 Issues Reported\n\n{total_issues}")
-
     with col2:
         st.success(f"✅ Issues Resolved\n\n{resolved_issues}")
-
     with col3:
         st.warning(f"🤝 Programmes Joined\n\n{total_programmes}")
     st.divider()
-
-
-    # Achievement badges
-
     st.subheader("🏅 Badges Earned")
-
-
-    achievements = []
-
-
-    if total_issues >= 1:
-        achievements.append(
-            "🌱 Community Starter\nReported your first issue"
-        )
-
-    if total_issues >= 5:
-        achievements.append(
-            "📢 Voice of the Community\nReported 5+ issues"
-        )
-
-    if resolved_issues >= 5:
-        achievements.append(
-            "🛠 Problem Solver\nHelped resolve 5 issues"
-        )
-
-    if total_programmes >= 3:
-        achievements.append(
-            "🤝 Community Volunteer\nJoined 3 programmes"
-        )
-
-    if total_issues >= 10:
-        achievements.append(
-            "🌟 Local Hero\n10+ issues reported"
-        )
-
-
+    achievements=[]
+    if total_issues>=1:
+        achievements.append("🌱 Community Starter\nReported your first issue")
+    if total_issues>=5:
+        achievements.append("📢 Voice of the Community\nReported 5+ issues")
+    if resolved_issues>=5:
+        achievements.append("🛠 Problem Solver\nHelped resolve 5 issues")
+    if total_programmes>=3:
+        achievements.append("🤝 Community Volunteer\nJoined 3 programmes")
+    if total_issues>=10:
+        achievements.append("🌟 Local Hero\n10+ issues reported")
     if achievements:
-
         for badge in achievements:
             st.success(badge)
-
     else:
-
-        st.info(
-            "🌱 No achievements yet. Start reporting issues and joining programmes!"
-        )
-
-
+        st.info("🌱 No achievements yet. Start reporting issues and joining programmes!")
     st.divider()
-
-
-    # Progress section
-
     st.subheader("🚀 Next Achievement")
-
-
-    if total_issues < 5:
-        remaining = 5 - total_issues
-        st.write(
-            f"📢 Report {remaining} more issue(s) to unlock **Voice of the Community**"
-        )
-
-    elif total_programmes < 3:
-        remaining = 3 - total_programmes
-        st.write(
-            f"🤝 Join {remaining} more programme(s) to unlock **Community Volunteer**"
-        )
-
+    if total_issues<5:
+        remaining=5-total_issues
+        st.write(f"📢 Report {remaining} more issue(s) to unlock **Voice of the Community**")
+    elif total_programmes<3:
+        remaining=3-total_programmes
+        st.write(f"🤝 Join {remaining} more programme(s) to unlock **Community Volunteer**")
     else:
-        st.write(
-            "🎉 You have unlocked most achievements!"
-        )
-#----------Gallery-----------
+        st.write("🎉 You have unlocked most achievements!")
+
 elif selected=="Gallery":
     gallery_option=st.selectbox("Choose an Option",["View VoxLocal Gallery","Publish your Gallery"])
-
-    def format_name(name):
-        return str(name).strip().lower().replace(" ","_")
-
     if gallery_option=="View VoxLocal Gallery":
         st.header("🖼️ VoxLocal Gallery")
-
-        if not os.path.exists("gallery"):
-            st.error("❌ Gallery folder not found.")
+        gallery_path="gallery"
+        if not os.path.exists(gallery_path):
+            st.error("❌ The gallery folder was not found in your repository.")
+            st.info("Make sure you have a folder named 'gallery' in the same repository as dashboard.py.")
             st.stop()
-
-        categories=[folder for folder in os.listdir("gallery") if os.path.isdir(os.path.join("gallery",folder))]
-
+        categories=[
+            folder for folder in os.listdir(gallery_path)
+            if os.path.isdir(os.path.join(gallery_path,folder))
+        ]
         if not categories:
             st.info("📷 No gallery categories available.")
             st.stop()
-
         selected_category=st.selectbox("Select Category",sorted(categories))
-
-        category_path=os.path.join("gallery",selected_category)
-
-        issues=[folder for folder in os.listdir(category_path) if os.path.isdir(os.path.join(category_path,folder))]
-
+        category_path=os.path.join(gallery_path,selected_category)
+        issues=[
+            folder for folder in os.listdir(category_path)
+            if os.path.isdir(os.path.join(category_path,folder))
+        ]
         if not issues:
             st.info("📷 No issues available for this category.")
             st.stop()
-
         selected_issue=st.selectbox("Select Issue",sorted(issues))
-
         st.subheader(f"📌 {selected_issue}")
         st.caption(f"Category: {selected_category}")
-
         issue_path=os.path.join(category_path,selected_issue)
-
-        images=[image for image in os.listdir(issue_path) if image.lower().endswith((".jpg",".jpeg",".png",".webp"))]
-
+        images=[
+            image for image in os.listdir(issue_path)
+            if image.lower().endswith((".jpg",".jpeg",".png",".webp"))
+        ]
         if not images:
             st.info("📷 No pictures available for this issue.")
             st.stop()
-
         images.sort()
-
         cols=st.columns(3)
-
         for i,image in enumerate(images):
             with cols[i%3]:
                 image_path=os.path.join(issue_path,image)
                 st.image(image_path,use_container_width=True)
-
                 filename=os.path.splitext(image)[0]
-
                 if "_" in filename:
                     uploader=filename.split("_")[0]
                 else:
                     uploader=filename
-
                 st.caption(f"👤 Uploaded by: {uploader}")
-# # ---------- ABOUT ----------
-# Add this once at the top of your app
-elif selected == "About Voxlocal":
-    with st.container():
-        st.markdown('<div class="white-box">', unsafe_allow_html=True)
+    elif gallery_option=="Publish your Gallery":
+        st.subheader("📸 Publish Your Gallery")
+        st.info("You can add gallery images to the repository under the gallery folder.")
+        st.write("Recommended structure:")
+        st.code("gallery/Category/Issue/image.jpg")
 
-        st.header("🌍 About Voxlocal")
+elif selected=="About Voxlocal":
+    st.header("🌍 About VoxLocal")
+    st.markdown("""
+    **VoxLocal** is a community-driven digital platform designed to connect residents,
+    encourage active participation, and create a better living environment for everyone.
+    """)
+    st.subheader("🎯 Our Mission")
+    st.markdown("""
+    Our mission is to create a smarter, safer, and more sustainable community by using
+    technology to improve communication, encourage citizen involvement, and support faster
+    solutions to local challenges.
+    """)
+    st.subheader("🌱 Our Connection with SDG 11")
+    st.markdown("""
+    **SDG 11: Sustainable Cities and Communities** aims to improve urban living by
+    promoting safe environments, sustainable practices, and inclusive communities.
+    """)
+    st.subheader("💡 What We Offer")
+    st.markdown("""
+    📝 **Neighbourhood Issue Reporting**  
+    Report problems such as road damage, waste management issues, water leaks, and safety concerns.
 
-        st.markdown("""
-        **VoxLocal** is a community-driven digital platform designed to connect residents, 
-        encourage active participation, and create a better living environment for everyone.
+    📢 **Community Announcements**  
+    Receive updates about local events, notices, and activities.
 
-        It provides a space where people can share their concerns, stay informed about 
-        neighbourhood activities, and actively contribute towards building stronger and 
-        more connected communities.
+    🤝 **Community Programmes**  
+    Participate in cleanliness drives, awareness campaigns, and volunteering activities.
 
-        The name **VoxLocal** represents the idea of giving a voice to local communities. 
-        **"Vox"** means voice, while **"Local"** represents the neighbourhoods we live in.
-        """)
+    🏆 **Achievements & Recognition**  
+    Track your contribution and participation in community improvement.
+    """)
+    st.subheader("🌏 Our Vision")
+    st.markdown("""
+    Our vision is to create sustainable neighbourhoods where every citizen has a voice,
+    every issue receives attention, and communities work together towards a cleaner,
+    safer, and more connected future.
 
+    **VoxLocal — Your Voice. Your Community. Your Impact.**
+    """)
 
-        st.subheader("🎯 Our Mission")
-
-        st.markdown("""
-        Our mission is to create a smarter, safer, and more sustainable community by using 
-        technology to improve communication, encourage citizen involvement, and support 
-        faster solutions to local challenges.
-
-        VoxLocal aligns with **SDG 11: Sustainable Cities and Communities**, which focuses 
-        on making cities and human settlements inclusive, safe, resilient, and sustainable.
-        """)
-
-
-        st.subheader("🌱 Our Connection with SDG 11")
-
-        st.markdown("""
-        **SDG 11: Sustainable Cities and Communities** aims to improve urban living by 
-        promoting safe environments, sustainable practices, and inclusive communities.
-
-        🏙️ **Creating Inclusive Communities**  
-        Providing residents with a platform to share opinions and report concerns.
-
-        🛠️ **Improving Local Infrastructure**  
-        Helping identify issues such as damaged roads, waste problems, and broken streetlights.
-
-        🌿 **Promoting Sustainable Practices**  
-        Encouraging cleanliness drives, tree plantation programmes, and sustainability campaigns.
-
-        🤝 **Encouraging Community Participation**  
-        Connecting residents through volunteering opportunities and community programmes.
-        """)
-
-
-        st.subheader("💡 What We Offer")
-
-        st.markdown("""
-        📝 **Neighbourhood Issue Reporting**  
-        Report problems such as road damage, waste management issues, water leaks, and safety concerns.
-
-        📢 **Community Announcements**  
-        Receive updates about local events, notices, and activities.
-
-        🤝 **Community Programmes**  
-        Participate in cleanliness drives, awareness campaigns, and volunteering activities.
-
-        🏆 **Achievements & Recognition**  
-        Track your contribution and participation in community improvement.
-        """)
-
-
-        st.subheader("🌏 Our Vision")
-
-        st.markdown("""
-        Our vision is to create sustainable neighbourhoods where every citizen has a voice, 
-        every issue receives attention, and communities work together towards a cleaner, 
-        safer, and more connected future.
-
-        **VoxLocal — Your Voice. Your Community. Your Impact.**
-        """)
-
-        st.markdown('</div>', unsafe_allow_html=True)
-# ---------- LOGOUT ----------
-elif selected == "Logout":
+elif selected=="Logout":
     st.session_state.clear()
     st.success("Logged out successfully")
     st.switch_page("app.py")
