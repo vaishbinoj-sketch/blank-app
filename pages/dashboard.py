@@ -569,12 +569,6 @@ elif selected == "Achievements":
             "🎉 You have unlocked most achievements!"
         )
 #----------Gallery-----------
-#----------Gallery-----------
-import os
-
-if not os.path.exists("gallery"):
-    os.makedirs("gallery")
-
 elif selected=="Gallery":
     gallery_option=st.selectbox("Choose an Option",["View Voxlocal Gallery","Publish your Gallery"])
     def format_name(name):
