@@ -129,9 +129,9 @@ else:
                 datejoin=st.date_input("Joining Date")
             with col4:
                 mail=st.text_input("Mail ID")
-                new_user=st.text_input("Username")
-                new_pass=st.text_input("Password",type="password")
-                confirm_pass=st.text_input("Confirm Password",type="password")
+            new_user=st.text_input("Username")
+            new_pass=st.text_input("Password",type="password")
+            confirm_pass=st.text_input("Confirm Password",type="password")
             if st.button("Register"):
                 if not name.strip():
                     st.error("⚠️ Please enter your name.")
