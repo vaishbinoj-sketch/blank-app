@@ -110,42 +110,45 @@ div.stButton > button {
 if st.session_state.logged_in:
     st.title("🏠 Dashboard")
     st.success("You are logged in!")
- 
     if st.button("Logout"):
-        st.session_state.logged_in = False
-
+        st.session_state.logged_in=False
+        st.rerun()
 else:
-    choice = st.radio("", ["Login", "Register"], horizontal=True)
-
-    col1, col2, col3 = st.columns([1,2,1])
-
+    choice=st.radio("",["Login","Register"],horizontal=True)
+    col1,col2,col3=st.columns([1,2,1])
     with col2:
-            if choice==("Register"):
-                st.subheader("📝 Register")
-                # ---------- ROW 1 ----------
-                col1, col2 = st.columns(2)
-                with col1:
-                    name = st.text_input("Name")
-                with col2:
-                    datebirth = st.date_input("Date of Birth")
-                # ---------- ROW 2 ----------
-                col3, col4 = st.columns(2)
-                with col3:
-                    datejoin = st.date_input("Joining Date")
-                with col4:
-                    mail = st.text_input("Mail ID")              
-                new_user = st.text_input("Username")                
-                new_pass = st.text_input("Password", type="password")
-                confirm_pass = st.text_input("Confirm Password", type="password")
-
-                if st.button("Register"):
-                    if new_pass != confirm_pass:
-                        st.warning("Passwords do not match")
-                    elif register_user(name,new_user,new_pass,mail,datebirth,datejoin):
-                        st.success("Account created! Go to Login")
-                    else:
-                        st.warning("Username already exists")
-            
+        if choice=="Register":
+            st.subheader("📝 Register")
+            col1,col2=st.columns(2)
+            with col1:
+                name=st.text_input("Name")
+            with col2:
+                datebirth=st.date_input("Date of Birth")
+            col3,col4=st.columns(2)
+            with col3:
+                datejoin=st.date_input("Joining Date")
+            with col4:
+                mail=st.text_input("Mail ID")
+            new_user=st.text_input("Username")
+            new_pass=st.text_input("Password",type="password")
+            confirm_pass=st.text_input("Confirm Password",type="password")
+            if st.button("Register"):
+                if not name.strip():
+                    st.error("⚠️ Please enter your name.")
+                elif not mail.strip():
+                    st.error("⚠️ Please enter your Mail ID.")
+                elif not new_user.strip():
+                    st.error("⚠️ Please enter a username.")
+                elif not new_pass:
+                    st.error("⚠️ Please enter a password.")
+                elif not confirm_pass:
+                    st.error("⚠️ Please confirm your password.")
+                elif new_pass!=confirm_pass:
+                    st.error("⚠️ Passwords do not match.")
+                elif register_user(name,new_user,new_pass,mail,datebirth,datejoin):
+                    st.success("✅ Account created successfully! Go to Login.")
+                else:
+                    st.warning("⚠️ Username already exists.")
             elif choice == "Login":
                 users = pd.read_csv("users.csv")
                 st.subheader("🔐 Login")
