@@ -230,17 +230,6 @@ elif selected == "Announcements":
             st.warning("No programmes available.")
             st.stop()
 
-        sort_option = st.selectbox("Sort programmes by:",["Newest","Oldest","Name","Venue"])
-
-        if sort_option == "Newest":
-            df = df.sort_values(by="Date",ascending=False)
-        elif sort_option == "Oldest":
-            df = df.sort_values(by="Date",ascending=True)
-        elif sort_option == "Name":
-            df = df.sort_values(by="Programme Name")
-        elif sort_option == "Venue":
-            df = df.sort_values(by="Venue")
-
         st.markdown("""
         <style>
         .card{
